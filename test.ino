@@ -2,11 +2,6 @@
    Programa test de motores
 */
 
-//motor Z
-const int pinStepsZ = 3;
-const int pinDirZ = 2;
-const int pinResetZ = 4;
-int stepsZ = 100; //stepsZ (cambiar a mano)
 //X
 const int pinStepsX = 11;
 const int pinDirX = 10;
@@ -15,6 +10,10 @@ const int pinResetX = 12;
 const int pinStepsY = 6;
 const int pinDirY = 5;
 const int pinResetY = 7;
+//motor Z
+const int pinStepsZ = 3;
+const int pinDirZ = 2;
+const int pinResetZ = 4;
 
 ///MOTOR rollo arriba
 const int pinDirUp = 30;
@@ -30,7 +29,6 @@ const int pinResetDown = 34;
 int speedXY = 500; //speedXY en microsegundos // speedXY //no funciona igual para ambos lados a menos de 500
 int speedZ = 500; //speedZ en microsegundos // speedZ
 int speedRoll = 16000;
-
 
 long pasosX = 100;
 long pasosY = 100;
