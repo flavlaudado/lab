@@ -48,7 +48,6 @@ void setup() {
   pinMode(pinStepsZ, OUTPUT);
   pinMode(pinDirZ, OUTPUT);
   pinMode(pinResetZ, OUTPUT);
-  digitalWrite(pinResetZ, HIGH);
   ///MOTOR UP
   pinMode(pinDirUp, OUTPUT);
   pinMode(pinStepsUp, OUTPUT);
