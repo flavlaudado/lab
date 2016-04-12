@@ -1,4 +1,4 @@
-/* cambiar variables Y funciones que empiezan con mayúscula !!
+/* Programa funcionanado
 */
 
 int burningTime = 2000;
@@ -51,12 +51,14 @@ const int endStopX = A0;
 const int thresholdEndStopX = 30;
 int valEndX;
 
-const int endStopY = A1;
-const int thresholdEndStopY = 30;
+const int endStopY = A2;
+const int thresholdEndStopY = 20;//15,18,20,30,50
+//con 10 mas o menos va
+//probe con 7 y no frena, con 10 se pasa o frena antes
 int valEndY;
 
-const int endStopZ = A2;
-const int umbralEndStopZ = 10;
+const int endStopZ = A3;
+const int thresholdEndStopZ = 10;
 int valEndZ;
 
 int flagEndX = LOW;
@@ -108,6 +110,11 @@ int temperatureLoopCounter = 3; //arranca solo si está en 3 temperatureLoopCoun
 int flagFindZero = HIGH;
 int flagEnableMotors = HIGH;
 
+//leds testigos para usos múltiples
+const int pinLed1 = 41;
+const int pinLed2 = 40;
+int led1;
+int led2;
 
 void setup() {
   //Serial.begin(115200);
@@ -149,6 +156,9 @@ void setup() {
   //funcion cero
   //libero motor abajo del rollo
   digitalWrite(pinResetDown, LOW);
+
+  pinMode(pinLed1, OUTPUT);
+  pinMode(pinLed2, OUTPUT);
 
   delay(3000); //para que no arranque directo
 
@@ -192,9 +202,10 @@ void findZero() {//si llega primero en X no busca el cero en Y
     digitalWrite(pinDirX, HIGH);
     moveMotor(pinStepsX, speedXY);
   }
-  if (valEndX < thresholdEndStopX) {
+  if (valEndX <= thresholdEndStopX) {
     flagEndX = HIGH;
-    // digitalWrite(pinResetX, LOW); //apago motorX
+    digitalWrite(pinResetX, LOW); //apago motorX
+    digitalWrite(pinLed1, HIGH);//led testigo
   }
   //fin de carrera en Y
   valEndY = analogRead(endStopY); //leo fin de carrera en Y
@@ -203,15 +214,16 @@ void findZero() {//si llega primero en X no busca el cero en Y
     digitalWrite(pinDirY, LOW);
     moveMotor(pinStepsY, speedXY);
   }
-  if (valEndY < thresholdEndStopY) {
+  if (valEndY <= thresholdEndStopY) {
     flagEndY = HIGH;
-    //digitalWrite(pinResetY, LOW);
+    digitalWrite(pinResetY, LOW);
+    digitalWrite(pinLed2, HIGH);//led testigo
   }
 
   if (flagEndX == HIGH && flagEndY == HIGH) { //si tocaron ambos fines de carrera ya está en 0,0
     flagFindZero = LOW;
-    digitalWrite(pinResetX, LOW);
-    digitalWrite(pinResetY, LOW);
+    //digitalWrite(pinResetX, LOW);
+    //digitalWrite(pinResetY, LOW);
     delay(500);
   }
 }
@@ -299,6 +311,10 @@ void burn() {
         exitOfMark = true;
         flagEnableRollMotor = true;
         n = 1;
+        m = 0;
+        flagFindZero = HIGH;
+        flagEndX = LOW;
+        flagEndY = LOW;
         findZero();
       }
       arrayRead(); //busca una nueva posición
@@ -337,7 +353,7 @@ void sequenceUp() {//agregar flag para que deje de hacerlo
   digitalWrite(pinDirZ, LOW);
   while (flagEndZ == LOW) {
     valEndZ = analogRead(endStopZ);
-    if (valEndZ > umbralEndStopZ) {
+    if (valEndZ > thresholdEndStopZ) {
       digitalWrite(pinResetZ, HIGH);
       moveMotor(pinStepsZ, speedZ);
     } else {
