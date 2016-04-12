@@ -1,7 +1,7 @@
 /*
-   EndStop: sensor efecto hall, en XY (programado sin usar el Z)
-    LÍMITES por soft, funcionan. y se activa finZero() cuando termina de leer
-    con rollos
+   EndStop: sensor efecto hall, en XY (sin usar el Z, pero está ya codeado)
+   LÍMITES por soft, funcionan. y se activa finZero() cuando termina de leer
+   Parte de rollos se saltea, poniendo readSheet = true;
 */
 
 int burningTime = 2000;
@@ -200,31 +200,31 @@ void countTemperatureLoops() {  //secuencia para contar ciclos de prendido Y apa
 void findZero() {
   enableMotorsXY(); //Prendo motores para buscar el cero
   //fin de carrera en X
-  if (flagEndX == LOW){
-  valEndX = analogRead(endStopX);
-  if ((valEndX > thresholdEndStopX) && (flagEndX == LOW)) {
-    // Fijarse la direccion de X
-    digitalWrite(pinDirX, HIGH);
-    moveMotor(pinStepsX, speedXY);
+  if (flagEndX == LOW) {
+    valEndX = analogRead(endStopX);
+    if ((valEndX > thresholdEndStopX) && (flagEndX == LOW)) {
+      // Fijarse la direccion de X
+      digitalWrite(pinDirX, HIGH);
+      moveMotor(pinStepsX, speedXY);
+    }
+    if (valEndX < thresholdEndStopX) {
+      flagEndX = HIGH;
+      digitalWrite(pinResetX, LOW); //apago motorX
+    }
   }
-  if (valEndX < thresholdEndStopX) {
-    flagEndX = HIGH;
-    digitalWrite(pinResetX, LOW); //apago motorX
-  }
-  }
-  
+
   //fin de carrera en Y
-  if (flagEndY == LOW){
-  valEndY = analogRead(endStopY); //leo fin de carrera en Y
-  if ((valEndY > thresholdEndStopY) && (flagEndY == LOW)) {
-    // Fijarse la direccion de Y
-    digitalWrite(pinDirY, LOW);
-    moveMotor(pinStepsY, speedXY);
-  }
-  if (valEndY < thresholdEndStopY) {
-    flagEndY = HIGH;
-    digitalWrite(pinResetY, LOW);
-  }
+  if (flagEndY == LOW) {
+    valEndY = analogRead(endStopY); //leo fin de carrera en Y
+    if ((valEndY > thresholdEndStopY) && (flagEndY == LOW)) {
+      // Fijarse la direccion de Y
+      digitalWrite(pinDirY, LOW);
+      moveMotor(pinStepsY, speedXY);
+    }
+    if (valEndY < thresholdEndStopY) {
+      flagEndY = HIGH;
+      digitalWrite(pinResetY, LOW);
+    }
   }
 
 
