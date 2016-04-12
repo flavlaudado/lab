@@ -1,5 +1,5 @@
 /*
-    LÍMITES por soft, funcionan. no se activa finZero() cuando termina de leer
+    LÍMITES por soft, funcionan. y se activa finZero() cuando termina de leer
 */
 
 int burningTime = 2000;
@@ -24,7 +24,7 @@ const PROGMEM uint16_t pixelY[] = {  300, 400, 450, 50, 500, 400, 600, 500, 450}
 long arraySize = 9;//726; //cantidad de fijaciones
 long n = 1;
 long m = 0;
-int sheetWidth = 1900;
+//int sheetWidth = 1900;//fijarse si está haciendo algo
 //configurar estas variables según dimensiones de hoja a usar
 const int minX = 0;
 const int maxX = 1000;
@@ -57,7 +57,7 @@ int flag = LOW;
 
 //finales de carrera
 const int endStopX = A0;
-const int thresholdEndStopX = 30;
+const int thresholdEndStopX = 50;
 int valEndX;
 
 const int endStopY = A2;
@@ -265,8 +265,8 @@ void burn() {
         flagEnableRollMotor = true;
       }
       //movimiento de motores en X e Y
-      if (flag == HIGH) {//hacia la izquierda
-        if (posX > 0) {
+      if (flag == HIGH) {
+        if (posX > 0) {//hacia la izquierda
           /* valEndX = analogRead(endStopX);//LÍMITES MECÁNICOS. leo el sensor
             if (valEndX < thresholdEndStopX) {//si llega al sensor
             posX = 0;                     // cree que llegó al punto
@@ -318,13 +318,15 @@ void burn() {
       m = n;
       n++;//avanzo una posición en el array
       if (n == arraySize - 1) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {//probando que llegó
           sequenceDown();
         }
         readSheet = false; //terminó de Burn la hoja
         exitOfMark = true;
         flagEnableRollMotor = true;
         n = 1;
+        m = 0;
+        flagFindZero = HIGH;//faltaba agregar esto :)
         flagEndX = LOW;
         flagEndY = LOW;
         findZero();
@@ -399,6 +401,7 @@ void arrayRead() {
      tengo que saber mi posición actual Y hacer el calculo Y ver si está dentro de mi hoja
      si no está dentro de mi hoja n++
   */
+  //posX = arraX[n];
   posX = pgm_read_word_near(pixelX + n);//leo nueva cordenada en X
   while ( posX < minX || posX > maxX) {//si posX se sale de lo límites
     n++;                               //avanzo una posición
