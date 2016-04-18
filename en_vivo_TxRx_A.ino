@@ -68,6 +68,7 @@ void loop() {
   }
   if (enviar){
     Serial.write(' ');
+    enviar = false;
   }
 }
 
@@ -112,5 +113,4 @@ void serialEvent() {//cuando entra data la guardo en una variable de tipo String
     }
   }
   } */
-
 
