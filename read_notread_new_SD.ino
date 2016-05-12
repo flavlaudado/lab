@@ -5,6 +5,9 @@
 /*
    Funciona joya.
    Hay que ver de ir guardando cada tanto el puntero.   
+
+   Cuando vuelva a probar esto ver de que esté bien el comportamiento en X (tal vez alrevés)
+   Nota en la linea 392
 */
 
 // RECUERDA FORMATEAR LA TARJETA SD EN FORMATO FAT 32
@@ -62,7 +65,7 @@ const int pinStepsZ = 3;
 const int pinDirZ = 2;
 const int pinResetZ = 4;
 
-const int stepsZ = 100; //stepsZ (cambiar a mano)
+const int stepsZ = 80; //stepsZ (cambiar a mano)
 //X
 const int pinStepsX = 11;
 const int pinDirX = 10;
@@ -89,6 +92,9 @@ const int endStopZ = A2;
 const int umbralEndStopZ = 75;
 int valEndZ;
 int flagEndZ = LOW;
+
+boolean moverX = false;
+boolean moverY = false;
 
 long counterX = 0;
 long counterY = 0;
@@ -237,8 +243,6 @@ void counterTemperatureLoops() {  //secuencia para contar ciclos de prendido y a
 
 void findZero() {
   enableMotorsXY(); //Prendo motores para buscar el cero
-  boolean moverX = false;
-  boolean moverY = false;
   digitalWrite(pinDirX, HIGH);
   digitalWrite(pinDirY, LOW);
   //fin de carrera en X
@@ -250,6 +254,7 @@ void findZero() {
     if (valEndX < thresholdEndStopX) {
       flagEndX = HIGH;
       digitalWrite(pinResetX, LOW); //apago motorX
+      moverX = false;
     }
   }
   //fin de carrera en Y
@@ -262,6 +267,7 @@ void findZero() {
     if (valEndY < thresholdEndStopY) {
       flagEndY = HIGH;
       digitalWrite(pinResetY, LOW);
+      moverY = false;
     }
   }
   if ((moverX == true) && (moverY == true)) { //para mover los 2 motores juntos
@@ -276,6 +282,7 @@ void findZero() {
   }
   if (flagEndX == HIGH && flagEndY == HIGH) { //si tocaron ambos fines de carrera ya está en 0,0
     flagFindZero = LOW;
+    delay(50);
   }
 }
 
@@ -327,28 +334,28 @@ void burn() {//por qué marca el 0,0 ??
       }*/
     }
     
-      if ((counterX > posX) && (counterY > posY)) {
+      if ((counterX > posXpasos) && (counterY > posYpasos)) {
       moveMotorXY();
       counterX++;
       counterY++;
-      } else if ((counterX > posX) && (counterY < posY)) {
+      } else if ((counterX > posXpasos) && (counterY < posYpasos)) {
       moveMotorXY();
       counterX++;
       counterY++;
-      } else if ((counterX < posX) && (counterY < posY)) {
+      } else if ((counterX < posXpasos) && (counterY < posYpasos)) {
       moveMotorXY();
       counterX++;
       counterY++;
-      } else if ((counterX < posX) && (counterY > posY)) {
+      } else if ((counterX < posXpasos) && (counterY > posYpasos)) {
       moveMotorXY();
       counterX++;
       counterY++;
       } else {
-      if (counterX != abs(posX)) {
+      if (counterX != abs(posXpasos)) {
         moveMotors(pinStepsX, speedXY);
         counterX++;
       }
-      if (counterY != abs(posY)) {
+      if (counterY != abs(posYpasos)) {
         moveMotors(pinStepsY, speedXY);
         counterY++;
       }
@@ -377,26 +384,27 @@ void burn() {//por qué marca el 0,0 ??
     if (readSheet == false) {//si no esta leyendo, ir a nueva pagina
     sheetSensing();//Sensar hoja, para saber si esta en una marca o no
     } */
-  if (counterX == abs(posX) && counterY == abs(posY)) {
+  if (counterX == abs(posXpasos) && counterY == abs(posYpasos)) {
     sequenceDown();//marco la fijacion
     counterX = 0;
     counterY = 0;
-    m = n;
-    n++;//avanzo una posición en el array
-    if (n == arraySize - 1) {
+    //m = n;
+    //n++;//avanzo una posición en el array
+    if (n == arraySize - 1) { //sigo haciendo esto acá o lo hago en el arrayReadSD() ?!?!
+      //tengo que hacer q se actualice en un lugar y que saltee el burn, o venga directo aca sin hacer pasos
       //      for (int i = 0; i < 3; i++) {//probando que llegó, no es funcional!!
       //        sequenceDown();
       //      }
       //readSheet = true; //lo pongo en true para saltear parte de los rollos
       //exitOfMark = true;
       //flagEnableRollMotor = true;
-      n = 1;
-      m = 0;
+      //n = 1;
+      //m = 0;
       punteroX = 0;
       punteroY = 0;
       flag_posAntX = true;
       flag_posAntY = true;
-      temperatureLoopCounter = min_counter_temperature + 1;
+      temperatureLoopCounter = min_counter_temperature + 1;//modificado para que arranque solo
       flagFindZero = HIGH;
       flagEndX = LOW;
       flagEndY = LOW;
@@ -522,15 +530,6 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     }
     posX = myFileX.parseInt(); //separa los numeros y lo guarda en posX
     punteroX = myFileX.position(); //agarra la posicion actual
-   /* Serial.print(" punteroX: ");
-    Serial.println(punteroX);
-    Serial.print(", valAntX: ");
-    Serial.print(posAntX);
-    Serial.print(", valX: ");
-    Serial.print(posX);
-    Serial.println(punteroX);
-    posX = myFileX.parseInt(); //separa los numeros y lo guarda en posX
-    punteroX = myFileX.position(); //agarra la posicion actual */
 
     myFileX.close();
     Serial.print(" punteroX: ");
@@ -545,10 +544,13 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     punteroX = 0;//me posiciono de vuelta en 0
     myFileX.close();//guardo y cierro
     flag_posAntX = true;
+    //aca terminó de leer el txt, o sea que tiene que buscar cero y quemar otra hoja
+    //forma chota y mal de hacerlo:
+    n = arraySize - 1 ;
   }
 
   posXpasos = (posX - posAntX) * f;//variable con la cantidad de pasos de motor
-  posXpasos = (posAntX - posX) * f;
+  //posXpasos = (posAntX - posX) * f;
   posAntX = posX; //actualizo el valor anterior
 
   //getPunteroY();//obtengo la ultima posicion del punteroY
@@ -575,6 +577,9 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     punteroY = 0;//me posiciono de vuelta en 0
     myFileY.close();//guardo y cierro
     flag_posAntY = true;
+    //aca terminó de leer el txt, o sea que tiene que buscar cero y quemar otra hoja
+    //forma chota y mal de hacerlo:
+    n = arraySize - 1 ;
   }
   posYpasos = (posY - posAntY) * f;//variable con la cantidad de pasos de motor
   //posYpasos = (posAntX - posX) * f;
