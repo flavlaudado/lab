@@ -6,6 +6,11 @@
    EndStop: sensor efecto hall, en XY (sin usar el Z, pero está ya codeado)
    LÍMITES por soft, funcionan. y se activa finZero() cuando termina de leer
    Parte de rollos se saltea, poniendo readSheet = true;
+
+   17 de mayo:
+   -Encontré un par de bugs en burn() y finZero(), para el reseteo cuando termina de leer un array
+   reChequear todo el proceso, para ver si pasé algo por alto
+   -Creería que con esto ya no marca la posición inicial.
 */
 
 int burningTime = 1000;
@@ -26,7 +31,7 @@ const PROGMEM uint16_t pixelY[] = { 0, 150, 500, 600, 100, 300, 700, 500};
   const PROGMEM uint16_t pixelY[] = {  300, 400, 450, 50, 500, 400, 600, 500, 450};
 */
 
-long arraySize = 8;//726; //8; //cantidad de fijaciones
+long arraySize = 5;//726; //8; //cantidad de fijaciones
 long n = 1; //actuall point in array read
 long m = 0; //before point in array read or 'n' data value
 
@@ -77,6 +82,9 @@ const int umbralEndStopZ = 75;
 int valEndZ;
 int flagEndZ = LOW;
 
+boolean moverX = false;
+boolean moverY = false;
+
 long counterX = 0;
 long counterY = 0;
 
@@ -96,7 +104,7 @@ boolean flagTemperature = false;// flagTemperature
 int temperatureSensor = 0;
 const int temperaturePin = 44;
 int temperatureLoopCounter = 4; //arranca solo si está en 4 temperatureLoopCounter
-const int min_counter_temperature = 3;
+const int minCounterTemperature = 3;
 
 int flagFindZero = HIGH;//si pongo LOW evita buscar el cero
 int flagEnableMotors = HIGH;
@@ -185,7 +193,7 @@ void loop() {
     findZero();
   }
   //a partir de acá la maquina está lista para Burn
-  if ((temperatureLoopCounter > min_counter_temperature) && (flagFindZero == LOW)) {
+  if ((temperatureLoopCounter > minCounterTemperature) && (flagFindZero == LOW)) {
     burn();
   }
 }
@@ -204,8 +212,6 @@ void counterTemperatureLoops() {  //secuencia para contar ciclos de prendido y a
 
 void findZero() {
   enableMotorsXY(); //Prendo motores para buscar el cero
-  boolean moverX = false;
-  boolean moverY = false;
   digitalWrite(pinDirX, HIGH);
   digitalWrite(pinDirY, LOW);
   //fin de carrera en X
@@ -223,7 +229,6 @@ void findZero() {
   if (flagEndY == LOW) {
     valEndY = analogRead(endStopY); //leo fin de carrera en Y
     if ((valEndY > thresholdEndStopY) && (flagEndY == LOW)) {
-      //moveMotors(pinStepsY, speedXY);
       moverY = true;
     }
     if (valEndY < thresholdEndStopY) {
@@ -243,6 +248,8 @@ void findZero() {
   }
   if (flagEndX == HIGH && flagEndY == HIGH) { //si tocaron ambos fines de carrera ya está en 0,0
     flagFindZero = LOW;
+    flag = LOW;
+    delay(50);
   }
 }
 
@@ -267,31 +274,15 @@ void burn() {
   if (flag == HIGH) {//primero setear la posición y luego moverlos
     if (posX > 0) {//hacia la izquierda
       digitalWrite(pinDirX, HIGH);
-      /*if (counterX < posX) {
-        moveMotors(pinStepsX, speedXY); //Move
-        counterX++;
-        }*/
     }
     else if (posX < 0) {
       digitalWrite(pinDirX, LOW);
-      /* if (counterX < (-posX)) {
-         moveMotors(pinStepsX, speedXY);
-         counterX++;
-        }*/
     }
     if (posY > 0) {//hacia abajo
       digitalWrite(pinDirY, HIGH);
-      /* if (counterY < posY) {
-         moveMotors(pinStepsY, speedXY);
-         counterY++;
-        }*/
     }
     else if (posY < 0) {//hacia arriba
       digitalWrite(pinDirY, LOW);
-      /* if (counterY < (-posY)) {
-         moveMotors(pinStepsY, speedXY);
-         counterY++;
-        }*/
     }
     if ((counterX != abs(posX)) && (counterY != abs(posY))) {
       moveMotorXY();
@@ -319,22 +310,24 @@ void burn() {
     counterY = 0;
     m = n;
     n++;//avanzo una posición en el array
-    if (n == arraySize - 1) {
-      //      for (int i = 0; i < 3; i++) {//probando que llegó, no es funcional!!
-      //        sequenceDown();
-      //      }
-      //readSheet = true; //lo pongo en true para saltear parte de los rollos
-      //exitOfMark = true;
-      //flagEnableRollMotor = true;
+    if (n == arraySize) {
+      /*      for (int i = 0; i < 3; i++) {//probando que llegó, no es funcional!!
+              sequenceDown();
+            } */
+      /*readSheet = true; //lo pongo en true para saltear parte de los rollos
+      exitOfMark = true;
+      flagEnableRollMotor = true; */
       n = 1;
       m = 0;
-      temperatureLoopCounter = min_counter_temperature + 1;
-      flagFindZero = HIGH;
+      temperatureLoopCounter = minCounterTemperature + 1;
+      flagFindZero = HIGH; //esto llama a buscar cero
       flagEndX = LOW;
       flagEndY = LOW;
-      findZero();
+      moverX = false;
+      moverY = false;
+    } else { 
+      arrayRead(); //busca una nueva posición
     }
-    arrayRead(); //busca una nueva posición
   }
 }
 
