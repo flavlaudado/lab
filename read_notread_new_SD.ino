@@ -4,10 +4,16 @@
 
 /*
    Funciona joya.
-   Hay que ver de ir guardando cada tanto el puntero.   
+   Hay que ver de ir guardando cada tanto el puntero.
 
-   Cuando vuelva a probar esto ver de que esté bien el comportamiento en X (tal vez alrevés)
+   Cuando vuelva a probar esto ver de que esté bien el comportamiento en X (tal vez al revés)
    Nota en la linea 392
+
+   17May
+   Quedó sin funcionar lo de SD, sospecho de la tarjeta, me dice q no tiene más para leer. SOLUCIONADO
+
+   19May
+   falta implementar límites en arrayReadSD()
 */
 
 // RECUERDA FORMATEAR LA TARJETA SD EN FORMATO FAT 32
@@ -106,7 +112,7 @@ long counterY = 0;
   (159mm(ancho de formato de texto)* 1000pap/ 6.2mm)/ 1890pX(ancho en pixeles) = f
   (159mm(ancho de formato de texto)* 1000pap/ 6.2mm)= 25645,16 (cantidad de pasos necesarios para recorrer el ancho del formato del texto)
   25646,16 / 1890pX= 13.56 = f */
-float f = 9;//con guias lineales 13.5
+float f = 5;//con guias lineales 13.5
 
 long posX = 0; //Pasos convertidos a partir de la variable en X
 long posY = 0; //Pasos convertidos a partir de la variable en Y
@@ -115,12 +121,11 @@ long posYpasos = 0;
 long posAntX = 0; //PosX del anterior loop
 long posAntY = 0; //PosY del anterior loop
 
-
 boolean flagTemperature = false;// flagTemperature
 int temperatureSensor = 0;
 const int temperaturePin = 44;
 int temperatureLoopCounter = 4; //arranca solo si está en 4 temperatureLoopCounter
-const int min_counter_temperature = 3;
+const int minCounterTemperature = 3;
 
 int flagFindZero = HIGH;//si pongo LOW evita buscar el cero
 int flagEnableMotors = HIGH;
@@ -172,7 +177,7 @@ void setup() {
 
   digitalWrite(pinResetX, LOW);
   digitalWrite(pinResetY, LOW);
-  digitalWrite(pinResetZ, HIGH);
+  //digitalWrite(pinResetZ, HIGH);
 
   //SENSORES
   //  pinMode(LED, OUTPUT);
@@ -181,7 +186,7 @@ void setup() {
   pinMode(pinLed1, OUTPUT);
   pinMode(pinLed2, OUTPUT);
 
-  sequenceUp_automatique();//dami este es para probar el sensor
+  //sequenceUp_automatique();//dami este es para probar el sensor
   delay(3000); //para que no arranque directo
   /*
       ///MOTOR UP
@@ -211,7 +216,7 @@ void setup() {
   }
   else {
     Serial.println("No encuentra archivo");
-    sequenceDown();
+    //sequenceDown();
   }
 }
 
@@ -224,7 +229,7 @@ void loop() {
     findZero();
   }
   //a partir de acá la maquina está lista para Burn
-  if ((temperatureLoopCounter > min_counter_temperature) && (flagFindZero == LOW)) {
+  if ((temperatureLoopCounter > minCounterTemperature) && (flagFindZero == LOW)) {
     burn();
   }
 }
@@ -282,11 +287,12 @@ void findZero() {
   }
   if (flagEndX == HIGH && flagEndY == HIGH) { //si tocaron ambos fines de carrera ya está en 0,0
     flagFindZero = LOW;
+    flag = LOW;//bug
     delay(50);
   }
 }
 
-void burn() {//por qué marca el 0,0 ??
+void burn() {
   if (flag == LOW) {//solo se ejecuta la primera vez
     arrayReadSD();
     // digitalWrite prepara los motores para mover
@@ -306,51 +312,23 @@ void burn() {//por qué marca el 0,0 ??
   //movimiento de motores en X e Y
   if (flag == HIGH) {//primero setear la posición y luego moverlos
     if (posXpasos > 0) {//hacia la izquierda
-      digitalWrite(pinDirX, LOW);//HIGH);
-     /* if (counterX < posX) {
-        moveMotors(pinStepsX, speedXY); //Move
-        counterX++;
-      }*/
+      digitalWrite(pinDirX, HIGH);//HIGH);
     }
     else if (posXpasos < 0) {
-      digitalWrite(pinDirX, HIGH);//LOW);
-      /*if (counterX < (-posX)) {
-        moveMotors(pinStepsX, speedXY);
-        counterX++;
-      }*/
+      digitalWrite(pinDirX, LOW);//LOW);
     }
     if (posYpasos > 0) {//hacia abajo
       digitalWrite(pinDirY, HIGH);
-      /*if (counterY < posY) {
-        moveMotors(pinStepsY, speedXY);
-        counterY++;
-      }*/
     }
     else if (posYpasos < 0) {//hacia arriba
       digitalWrite(pinDirY, LOW);
-     /* if (counterY < (-posY)) {
-        moveMotors(pinStepsY, speedXY);
-        counterY++;
-      }*/
     }
-    
-      if ((counterX > posXpasos) && (counterY > posYpasos)) {
+
+    if ((counterX != abs(posXpasos)) && (counterY != abs(posYpasos))) {
       moveMotorXY();
       counterX++;
       counterY++;
-      } else if ((counterX > posXpasos) && (counterY < posYpasos)) {
-      moveMotorXY();
-      counterX++;
-      counterY++;
-      } else if ((counterX < posXpasos) && (counterY < posYpasos)) {
-      moveMotorXY();
-      counterX++;
-      counterY++;
-      } else if ((counterX < posXpasos) && (counterY > posYpasos)) {
-      moveMotorXY();
-      counterX++;
-      counterY++;
-      } else {
+    } else {
       if (counterX != abs(posXpasos)) {
         moveMotors(pinStepsX, speedXY);
         counterX++;
@@ -359,57 +337,17 @@ void burn() {//por qué marca el 0,0 ??
         moveMotors(pinStepsY, speedXY);
         counterY++;
       }
-      } 
-
-
-
-      /*
-      if ((counterX != abs(posX)) && (counterY != abs(posY))) {
-      moveMotorXY();
-      counterX++;
-      counterY++;
-      } else {//mover motores de a uno
-      if (counterX != abs(posX)) {
-        moveMotors(pinStepsX, speedXY);
-        counterX++;
-      }
-      if (counterY != abs(posY)) {
-        moveMotors(pinStepsY, speedXY);
-        counterY++;
-      }
-      }*/
+    }
   }
-
   /*
     if (readSheet == false) {//si no esta leyendo, ir a nueva pagina
     sheetSensing();//Sensar hoja, para saber si esta en una marca o no
     } */
   if (counterX == abs(posXpasos) && counterY == abs(posYpasos)) {
-    sequenceDown();//marco la fijacion
+    //sequenceDown();//marco la fijacion
+    delay(500);
     counterX = 0;
     counterY = 0;
-    //m = n;
-    //n++;//avanzo una posición en el array
-    if (n == arraySize - 1) { //sigo haciendo esto acá o lo hago en el arrayReadSD() ?!?!
-      //tengo que hacer q se actualice en un lugar y que saltee el burn, o venga directo aca sin hacer pasos
-      //      for (int i = 0; i < 3; i++) {//probando que llegó, no es funcional!!
-      //        sequenceDown();
-      //      }
-      //readSheet = true; //lo pongo en true para saltear parte de los rollos
-      //exitOfMark = true;
-      //flagEnableRollMotor = true;
-      //n = 1;
-      //m = 0;
-      punteroX = 0;
-      punteroY = 0;
-      flag_posAntX = true;
-      flag_posAntY = true;
-      temperatureLoopCounter = min_counter_temperature + 1;//modificado para que arranque solo
-      flagFindZero = HIGH;
-      flagEndX = LOW;
-      flagEndY = LOW;
-      findZero();
-    }
     arrayReadSD(); //busca una nueva posición
   }
 }
@@ -456,8 +394,7 @@ void sequenceUp_automatique() {//función para levantar en Z, con sensor
     valEndZ = analogRead(endStopZ);
     if (valEndZ > umbralEndStopZ) {
       moveMotors(pinStepsZ, speedZ);
-    } else {
-      //digitalWrite(pinResetZ, LOW);
+    } else 
       flagEndZ = HIGH; //flag en HIGH cuando está en 0
     }
   }
@@ -484,7 +421,7 @@ void setPuntero() { //cada vez que arranca se fija en cuanto quedó el puntero d
   punX = SD.open("punteroX.txt", FILE_WRITE);
   punX.seek(0);//me posiciono en el inicio del archivo
   punX.print(punteroX);//escribe la nueva posicion del puntero
-  Serial.print(" punteroX: ");
+  Serial.print("Escribo punteros punteroX: ");
   Serial.print(punteroX);
   punX.close();
 
@@ -513,15 +450,13 @@ void getPunteroY() {//obtengo el lugar del punteroY
   Serial.print(punteroY);
   punY.close();//cierro el archivo
 }
-//estaría faltando una variable q me actualice la cantidad de fijaciones que agarré?!
 
 void arrayReadSD() {//obtengo posiciones de la tarjeta SD
   Serial.println("Entrando a arrayReadSD()");
-  //solo hago getPuntero() si se cortó la luz
-  //getPunteroX();//obtengo la ultima posicion del punteroX
+  //solo hago getPuntero() si se cortó la luz en el setup()
   myFileX = SD.open("x1.txt", FILE_READ);//abro el archivo de fijaciones en X
   myFileX.seek(punteroX);//posiciono el puntero
-  if (myFileX.available() > 0) {//me fijo
+  if (myFileX.available() > 0) {//me fijo si todavía hay datos para leer
     Serial.print(" Entrando al archivo X");
     if (flag_posAntX) { //si es la primera, agarro la primera como anterior
       myFileX.seek(0);
@@ -530,7 +465,6 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     }
     posX = myFileX.parseInt(); //separa los numeros y lo guarda en posX
     punteroX = myFileX.position(); //agarra la posicion actual
-
     myFileX.close();
     Serial.print(" punteroX: ");
     Serial.print(punteroX);
@@ -543,14 +477,20 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     Serial.println("termino el archivo");
     punteroX = 0;//me posiciono de vuelta en 0
     myFileX.close();//guardo y cierro
-    flag_posAntX = true;
     //aca terminó de leer el txt, o sea que tiene que buscar cero y quemar otra hoja
-    //forma chota y mal de hacerlo:
-    n = arraySize - 1 ;
+    punteroX = 0;
+    punteroY = 0;
+    flag_posAntX = true;
+    flag_posAntY = true;
+    temperatureLoopCounter = minCounterTemperature + 1;//modificado para que arranque solo
+    flagFindZero = HIGH;
+    flagEndX = LOW;
+    flagEndY = LOW;
+    moverX = false;
+    moverY = false;
   }
 
   posXpasos = (posX - posAntX) * f;//variable con la cantidad de pasos de motor
-  //posXpasos = (posAntX - posX) * f;
   posAntX = posX; //actualizo el valor anterior
 
   //getPunteroY();//obtengo la ultima posicion del punteroY
@@ -578,15 +518,23 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
     myFileY.close();//guardo y cierro
     flag_posAntY = true;
     //aca terminó de leer el txt, o sea que tiene que buscar cero y quemar otra hoja
-    //forma chota y mal de hacerlo:
-    n = arraySize - 1 ;
+    punteroX = 0;
+    punteroY = 0;
+    flag_posAntX = true;
+    flag_posAntY = true;
+    temperatureLoopCounter = minCounterTemperature + 1;//modificado para que arranque solo
+    flagFindZero = HIGH;
+    flagEndX = LOW;
+    flagEndY = LOW;
+    moverX = false;
+    moverY = false;
   }
   posYpasos = (posY - posAntY) * f;//variable con la cantidad de pasos de motor
-  //posYpasos = (posAntX - posX) * f;
   posAntY = posY;//actualizo el valor anterior
-  /*
+  
+  /*//Secuencia para que cada X fijaciones guarde su posición
     r++;
-    if (r > 10) { //guardo el puntero cada X fijaciones
+    if (r > 2) { //guardo el puntero cada X fijaciones
     setPuntero();//actualizo los punteros
     r = 0;
     } */
