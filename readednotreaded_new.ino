@@ -11,6 +11,9 @@
    -Encontré un par de bugs en burn() y finZero(), para el reseteo cuando termina de leer un array
    reChequear todo el proceso, para ver si pasé algo por alto
    -Creería que con esto ya no marca la posición inicial.
+
+   24May16
+   Arreglé los puntos fuera de límites.
 */
 
 int burningTime = 1000;
@@ -23,24 +26,26 @@ int burningTime = 1000;
   const PROGMEM uint16_t pixelY[] = {0, 0, 1, 2, 0, 201, 165, 176, 173, 186, 167, 181, 180, 181, 178, 187, 164, 186, 180, 168, 171, 239, 168, 239, 187, 165, 173, 317, 231, 256, 262, 224, 301, 246, 244, 304, 303, 241, 304, 228, 225, 244, 240, 241, 258, 290, 289, 307, 321, 317, 292, 315, 301, 306, 302, 328, 302, 302, 329, 303, 325, 296, 315, 294, 297, 309, 308, 304, 304, 292, 318, 312, 329, 308, 359, 374, 353, 371, 385, 373, 397, 361, 376, 380, 373, 363, 390, 376, 379, 368, 373, 376, 358, 373, 377, 364, 353, 381, 426, 444, 441, 468, 413, 462, 437, 481, 441, 460, 426, 434, 457, 451, 458, 473, 433, 422, 453, 436, 434, 418, 405, 420, 425, 436, 516, 462, 471, 471, 470, 488, 506, 525, 480, 496, 478, 495, 495, 477, 505, 513, 500, 503, 485, 504, 464, 498, 487, 468, 471, 491, 544, 561, 564, 559, 545, 562, 565, 534, 533, 544, 546, 535, 527, 548, 525, 540, 524, 543, 524, 536, 524, 548, 542, 570, 533, 556, 595, 626, 612, 627, 604, 608, 613, 632, 667, 692, 668, 670, 645, 678, 662, 680, 674, 683, 674, 683, 679, 683, 679, 683, 675, 701, 675, 701, 659, 677, 677, 678, 654, 673, 654, 673, 665, 683, 665, 683, 732, 747, 732, 747, 730, 754, 722, 721, 736, 742, 780, 785, 728, 756, 729, 757, 752, 755, 735, 727, 763, 752, 828, 815, 805, 817, 815, 832, 809, 814, 807, 816, 789, 795, 791, 784, 798, 811, 804, 793, 780, 772, 789, 802, 806, 790, 825, 821, 883, 863, 854, 858, 857, 851, 869, 881, 880, 840, 854, 854, 864, 842, 838, 871, 830, 836, 847, 857, 877, 914, 925, 920, 911, 934, 928, 921, 929, 925, 932, 923, 922, 917, 915, 925, 925, 914, 931, 924, 927, 927, 920, 936, 957, 980, 999, 982, 998, 990, 985, 985, 993, 1007, 969, 972, 987, 972, 976, 964, 966, 975, 967, 985, 978, 977, 978, 980, 994, 989, 966, 1008, 970, 997, 1015, 1030, 1029, 1056, 1003, 1027, 1034, 1010, 1042, 1047, 1055, 1071, 1029, 1029, 1045, 1056, 1013, 1040, 1042, 1053, 1033, 1057, 1018, 1027, 1043, 1082, 1107, 1118, 1086, 1119, 1094, 1112, 1099, 1120, 1090, 1114, 1130, 1093, 1087, 1081, 1109, 1114, 1122, 1099, 1103, 1094, 1117, 1149, 1176, 1144, 1158, 1141, 1156, 1142, 1144, 1168, 1173, 1151, 1163, 1122, 1151, 1149, 1150, 1180, 1160, 1154, 1151, 1167, 1199, 1200, 1219, 1196, 1219, 1207, 1223, 1216, 1218, 1216, 1232, 1202, 1220, 1213, 1204, 1197, 1211, 1210, 1228, 1214, 1217, 1351, 1366, 1333, 1335, 1353, 1343, 1331, 1337, 1342, 1353, 1347, 1334, 1370, 1370, 1356, 1336, 1336, 1349, 1302, 1342, 1366, 1364, 1409, 1411, 1417, 1431, 1408, 1404, 1387, 1405, 1382, 1407, 1397, 1419, 1377, 1423, 1381, 1416, 1416, 1398, 1396, 1398, 1416, 1397, 1395, 1425, 1474, 1469, 1452, 1463, 1472, 1443, 1460, 1451, 1443, 1454, 1458, 1446, 1450, 1450, 1459, 1470, 1477, 1492, 1495, 1487, 1473, 1452, 1499, 1517, 1543, 1510, 1545, 1527, 1517, 1542, 1522, 1520, 1543, 1539, 1533, 1565, 1552, 1537, 1541, 1534, 1543, 1525, 1530, 1514, 1529, 1537, 1524, 1511, 1552, 1518, 1536, 1537, 1593, 1573, 1586, 1562, 1566, 1543, 1593, 1626, 1605, 1617, 1596, 1584, 1578, 1588, 1576, 1602, 1600, 1659, 1664, 1645, 1630, 1636, 1633, 1654, 1638, 1642, 1631, 1652, 1624, 1619, 1646, 1630, 1647, 1633, 1667, 1626, 1641, 1676, 1737, 1687, 1722, 1687, 1727, 1729, 1708, 1715, 1690, 1697, 1678, 1697, 1685, 1712, 1684, 1684, 1705, 1721, 1717, 1724, 1715, 1681, 1726, 1704, 1716, 1710, 1715, 1751, 1791, 1736, 1792, 1736, 1781, 1802, 1768, 1790, 1746, 1765, 1756, 1771, 1770, 1774, 1777, 1796, 1762, 1758, 1739, 1741, 1733, 1756, 1791, 1819, 1812, 1839, 1854, 1805, 1844, 1816, 1832, 1835, 1855, 1829, 1846, 1814, 1821, 1850, 1836, 1841, 1845, 1828, 1813, 1815, 1827, 1826, 1813, 1899, 1862, 1919, 1902, 1912, 1906, 1885, 1870, 1858, 1871, 1863, 1868, 1908, 1889, 1907, 1869, 1894, 1876, 1903, 1876, 1926, 1939, 1926, 1977, 1969, 1963, 1945, 1934, 1922, 1928, 1944, 1926, 1946, 1912, 1918, 1939, 1919, 1967, 1931, 1951, 1943, 1952, 1947, 1918, 2008, 1989, 2004, 1979, 1987, 2003, 1993, 2008, 2010, 2005, 2004, 2023, 1994, 1990, 2022, 2000, 1987, 2018, 2019, 1999, 2021, 2048, 2076, 2067, 2068, 2066, 2064, 2069, 2085, 2052, 2074, 2052, 2068, 2043, 2063, 2058, 2068, 2055, 2077, 2096, 2066, 2081, 2086, 0};
 */
 
-const PROGMEM uint16_t pixelX[] = { 1000, 800, 500, 350, 100, 500, 900, 50};
-const PROGMEM uint16_t pixelY[] = { 0, 150, 500, 600, 100, 300, 700, 500};
+const PROGMEM uint16_t pixelX[] = { 1000, 800, 400, 0, 400, 800, 0, 800, 800};
+const PROGMEM uint16_t pixelY[] = { 0, 200, 200, 300, 600, 800, 300, 800, 600};
 
 /* //array con fijaciones fuera de los límites
   const PROGMEM uint16_t pixelX[] = {  1000, 950, 700, 600, 550, 1100, 500, 200, 600};
   const PROGMEM uint16_t pixelY[] = {  300, 400, 450, 50, 500, 400, 600, 500, 450};
 */
 
-long arraySize = 5;//726; //8; //cantidad de fijaciones
+long arraySize = 9;//726; //8; //cantidad de fijaciones
 long n = 1; //actuall point in array read
 long m = 0; //before point in array read or 'n' data value
 
 //configurar estas variables según dimensiones de hoja a usar, valores en pixeles
 // OJO, SON LOS LÍMITES DE LAS POSICIONES
-const int minX = 0;
+const int minX = 100;
 const int maxX = 1000;
 const int minY = 0;
 const int maxY = 700;
+boolean outLimitX = false;
+boolean outLimitY = false;
 
 //variables correspondientes al motor
 const int speedXY = 500; //speedXY en microsegundos // speedXY //no funciona igual para ambos lados a menos de 500
@@ -156,7 +161,7 @@ void setup() {
 
   digitalWrite(pinResetX, LOW);
   digitalWrite(pinResetY, LOW);
-  digitalWrite(pinResetZ, HIGH);
+  //digitalWrite(pinResetZ, HIGH);
 
   //SENSORES
   //  pinMode(LED, OUTPUT);
@@ -165,7 +170,7 @@ void setup() {
   pinMode(pinLed1, OUTPUT);
   pinMode(pinLed2, OUTPUT);
 
-  sequenceUp_automatique();//dami este es para probar el sensor
+  //sequenceUp_automatique();//dami este es para probar el sensor
   delay(3000); //para que no arranque directo
   /*
       ///MOTOR UP
@@ -248,7 +253,7 @@ void findZero() {
   }
   if (flagEndX == HIGH && flagEndY == HIGH) { //si tocaron ambos fines de carrera ya está en 0,0
     flagFindZero = LOW;
-    flag = LOW;
+    flag = LOW;//bug
     delay(50);
   }
 }
@@ -305,18 +310,19 @@ void burn() {
       sheetSensing();//Sensar hoja, para saber si esta en una marca o no
     } */
   if (counterX == abs(posX) && counterY == abs(posY)) {
-    sequenceDown();//marco la fijacion
+    //sequenceDown();//marco la fijacion
+    delay(500);//saco el eje Z porque está todo muy suelto
     counterX = 0;
     counterY = 0;
     m = n;
     n++;//avanzo una posición en el array
-    if (n == arraySize) {
+    if (n == arraySize) { //bug
       /*      for (int i = 0; i < 3; i++) {//probando que llegó, no es funcional!!
               sequenceDown();
             } */
       /*readSheet = true; //lo pongo en true para saltear parte de los rollos
-      exitOfMark = true;
-      flagEnableRollMotor = true; */
+        exitOfMark = true;
+        flagEnableRollMotor = true; */
       n = 1;
       m = 0;
       temperatureLoopCounter = minCounterTemperature + 1;
@@ -325,7 +331,8 @@ void burn() {
       flagEndY = LOW;
       moverX = false;
       moverY = false;
-    } else { 
+      //findZero(); //bug
+    } else { //bug
       arrayRead(); //busca una nueva posición
     }
   }
@@ -404,25 +411,28 @@ void arrayRead() {
      tengo que saber mi posición actual Y hacer el calculo Y ver si está dentro de mi hoja
      si no está dentro de mi hoja n++
   */
+  outLimitX = true;
+  outLimitY = true;
   posX = pgm_read_word_near(pixelX + n);//leo nueva cordenada en X en pixeles
-  while ( posX < minX || posX > maxX) {//si posX se sale de lo límites
-    n++;                               //avanzo una posición
-    posX = pgm_read_word_near(pixelX + n);
-    //    digitalWrite(pinLed1, HIGH);
-    //    delay(200);
-    //    digitalWrite(pinLed1, LOW);
-  }
-
   posY = pgm_read_word_near(pixelY + n);//leo nueva cordenada en Y en pixeles
-  while ( posY < minY || posY > maxY) {//si posY se sale de lo límites
-    n++;                               //avanzo una posición
+  while (outLimitX || outLimitY) { //mientras estén fuera de límites buscar nueva posición
+    posX = pgm_read_word_near(pixelX + n);
+    if (posX < minX || posX > maxX) {//si posX se sale de lo límites
+      n++;                               //avanzo una posición
+      posX = pgm_read_word_near(pixelX + n);
+      outLimitX = true;
+    } else {
+      outLimitX = false;
+    }
     posY = pgm_read_word_near(pixelY + n);
-    //    digitalWrite(pinLed2, HIGH);
-    //    delay(500);
-    //    digitalWrite(pinLed2, LOW);
+    if ( posY < minY || posY > maxY) {//si posY se sale de lo límites
+      n++;                               //avanzo una posición
+      posY = pgm_read_word_near(pixelY + n);
+      outLimitY = true;
+    } else {
+      outLimitY = false;
+    }
   }
-  posY = pgm_read_word_near(pixelY + n);//leo nueva posición en Y
-  posX = pgm_read_word_near(pixelX + n);//leo nueva posición en X
 
   posX = (posX - pgm_read_word_near(pixelX + m)) * f; //posX = cantidad de pasos de motor en "x" que debe efectuar para ir a destino
   posY = (posY - pgm_read_word_near(pixelY + m)) * f; //posY = cantidad de pasos de motor en "y" que debe efectuar para ir a destino
