@@ -29,8 +29,7 @@ unsigned long punteroY = 0;
 boolean flag_posAntX = true;
 boolean flag_posAntY = true;
 int r = 0;
-int n = 2;
-unsigned long puntero = 0;
+int n = 2;//Seteo cada cuantas fijaciones guarda el puntero
 
 int burningTime = 1000;
 
@@ -50,16 +49,16 @@ int burningTime = 1000;
   const PROGMEM uint16_t pixelY[] = {  300, 400, 450, 50, 500, 400, 600, 500, 450};
 */
 
-long arraySize = 19;//726; //8; //cantidad de fijaciones
-long n = 1; //actuall point in array read
-long m = 0; //before point in array read or 'n' data value
+//long arraySize = 19;//726; //8; //cantidad de fijaciones
+//long n = 1; //actuall point in array read
+//long m = 0; //before point in array read or 'n' data value
 
 //configurar estas variables según dimensiones de hoja a usar, valores en pixeles
 // OJO, SON LOS LÍMITES DE LAS POSICIONES
-const int minX = 0;
-const int maxX = 1900;
+const int minX = 100;
+const int maxX = 1000;
 const int minY = 0;
-const int maxY = 1000;
+const int maxY = 700;
 boolean outLimitX = false;
 boolean outLimitY = false;
 
@@ -214,9 +213,9 @@ void setup() {
 
   if (SD.begin()) { //esto aprueba que la memoria SD está disponible
     Serial.println("OK...");
-    //setPuntero();
-    getPunteroX();
-    getPunteroY();
+    setPuntero();
+    //getPunteroX();
+    //getPunteroY();
   }
   else {
     Serial.println("No encuentra archivo");
@@ -270,7 +269,6 @@ void findZero() {
   if (flagEndY == LOW) {
     valEndY = analogRead(endStopY); //leo fin de carrera en Y
     if ((valEndY > thresholdEndStopY) && (flagEndY == LOW)) {
-      //moveMotors(pinStepsY, speedXY);
       moverY = true;
     }
     if (valEndY < thresholdEndStopY) {
@@ -459,67 +457,50 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
   Serial.println("Entrando a arrayReadSD()");
   outLimitX = true;
   outLimitY = true;
-  int counterPosX = 0; //para guardar cuántas veces avanzo
-  int counterPosY = 0;
-  //solo hago getPuntero() si se cortó la luz, va en el setup()
   myFileX = SD.open("x1.txt", FILE_READ);//abro el archivo de fijaciones en X
   myFileX.seek(punteroX);//posiciono el puntero
-  if (myFileX.available() > 0) {//me fijo si todavía hay datos para leer
-    Serial.print(" Entrando al archivo X");
-    if (flag_posAntX) { //si es la primera, agarro la primera como anterior
-      myFileX.seek(0);
-      posAntX = myFileX.parseInt();//agarro la posicion inicial, para hacer el calculo
-      flag_posAntX = false;//flag para hacerlo solo la primera vez
-    }
-    if (punteroX != 0) {
-      myFileX.seek(punteroX);//vuelvo a setear el puntero, para ir al punto donde había quedado
-    }
-    //NOTA: acá hay que implementar los límites y toda esa bola
-    //NOTA2: se pueden abrir archivo simultaneos, hasta ni conviene cerrrarlos si es solo de lectura
-    posX = myFileX.parseInt(); //separa los numeros y lo guarda en posX
-    while (posX < minX || posX > maxX ) { //implementando de límites, working progresss...
-      posX = myFileX.parseInt();
-      lugarAvanzado++;//con esto hago que Y avance igual
-    }
-    //tengo que ver de implementar los límites en los 2.
-    //si lugarAvanzado != 0 entonces hago un for( i< lugaravanzado) {myFileY.parseInt();}
-    //y ahí vuelvo a chequear los límites de Y, si avance en Y, tengo que hacer esto con X y volver a chequear
+  myFileY = SD.open("y1.txt", FILE_READ);//abro el archivo de fijaciones en Y
+  myFileY.seek(punteroY);//posiciono el puntero
 
-    //tengo que levantar un flag cuando uno está fuera de limite y ahí chequear el otro, 
-    //si llega a cambiar volver a chequear al otro así hasta q los 2 den bien
-    punteroX = myFileX.position(); //agarra la posicion actual
-    myFileX.close();
-    Serial.print(" punteroX: ");
-    Serial.print(punteroX);
-    Serial.print(", valAntX: ");
-    Serial.print(posAntX);
-    Serial.print(", valX: ");
-    Serial.println(posX);
-
-  } else { //si terminó de leer el archivo
-    Serial.println("termino el archivo");
-    punteroX = 0;//me posiciono de vuelta en 0
-    myFileX.close();//guardo y cierro
-    //aca terminó de leer el txt, o sea que tiene que buscar cero y quemar otra hoja
-    punteroX = 0;
-    punteroY = 0;
-    flag_posAntX = true;
-    flag_posAntY = true;
-    temperatureLoopCounter = minCounterTemperature + 1;//modificado para que arranque solo
-    flagFindZero = HIGH;
-    flagEndX = LOW;
-    flagEndY = LOW;
-    moverX = false;
-    moverY = false;
-  }
-  if ( flagFindZero == false ) {
-    posXpasos = (posX - posAntX) * f;//variable con la cantidad de pasos de motor
-    posAntX = posX; //actualizo el valor anterior
-  }
-
-  if ( flagFindZero == false ) {
-    myFileY = SD.open("y1.txt", FILE_READ);//abro el archivo de fijaciones en Y
-    myFileY.seek(punteroY);//posiciono el puntero
+  while (outLimitX || outLimitY) {
+    if (myFileX.available() > 0) {//me fijo si todavía hay datos para leer
+      Serial.print(" Entrando al archivo X");
+      if (flag_posAntX) { //si es la primera, agarro la primera como anterior
+        myFileX.seek(0);
+        posAntX = myFileX.parseInt();//agarro la posicion inicial, para hacer el calculo
+        flag_posAntX = false;//flag para hacerlo solo la primera vez
+      }
+      if (punteroX != 0) {
+        myFileX.seek(punteroX);//vuelvo a setear el puntero, para ir al punto donde había quedado
+      }
+      posX = myFileX.parseInt(); //separa los numeros y lo guarda en posX
+      punteroX = myFileX.position();
+      if (posX < minX || posX > maxX ) {//límites por soft
+        outLimitX = true;
+      } else {
+        outLimitX = false;
+      }
+      Serial.print(" punteroX: ");
+      Serial.print(punteroX);
+      Serial.print(", valAntX: ");
+      Serial.print(posAntX);
+      Serial.print(", valX: ");
+      Serial.println(posX);
+    } else { //si terminó de leer el archivo
+      Serial.println("termino el archivo");
+      punteroX = 0;//me posiciono de vuelta en 0
+      punteroY = 0;
+      flag_posAntX = true;
+      flag_posAntY = true;
+      temperatureLoopCounter = minCounterTemperature + 1;//modificado para que arranque solo
+      flagFindZero = HIGH;
+      flagEndX = LOW;
+      flagEndY = LOW;
+      moverX = false;
+      moverY = false;
+      outLimitX = false;
+      outLimitY = false;
+    }
     if (myFileY.available() > 0) {
       Serial.print(" Entrando al archivo Y");
       if (flag_posAntY) {//si es la primera, agarro la primera como anterior
@@ -530,9 +511,13 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
       if (punteroY != 0) {
         myFileY.seek(punteroY);//vuelvo a setear el puntero, para ir al punto donde había quedado
       }
-      posY = myFileY.parseInt(); //separa los numeros y lo guarda en posY
-      punteroY = myFileY.position(); //agarra la posicion actual
-      myFileY.close();//guardo y cierro
+      posY = myFileY.parseInt(); //separa los numeros y lo guarda en posX
+      punteroY = myFileY.position();
+      if (posY < minY || posY > maxY ) { //implementando de límites, working progresss...
+        outLimitY = true;
+      } else {
+        outLimitY = false;
+      }
       Serial.print(" punteroY: ");
       Serial.print(punteroY);
       Serial.print(", valAntY: ");
@@ -541,8 +526,6 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
       Serial.println(posY);
     } else {
       Serial.println("termino el archivo");
-      punteroY = 0;//me posiciono de vuelta en 0
-      myFileY.close();//guardo y cierro
       flag_posAntY = true;
       punteroX = 0;
       punteroY = 0;
@@ -554,9 +537,14 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
       flagEndY = LOW;
       moverX = false;
       moverY = false;
+      outLimitX = false;
+      outLimitY = false;
     }
   }
+
   if ( flagFindZero == false ) {
+    posXpasos = (posX - posAntX) * f;//variable con la cantidad de pasos de motor
+    posAntX = posX; //actualizo el valor anterior
     posYpasos = (posY - posAntY) * f;//variable con la cantidad de pasos de motor
     posAntY = posY;//actualizo el valor anterior
     //Secuencia para que cada X fijaciones guarde su posición
@@ -566,35 +554,40 @@ void arrayReadSD() {//obtengo posiciones de la tarjeta SD
       r = 0;
     }
   }
+  myFileX.close();//guardo y cierro
+  myFileY.close();
 }
 
 /*
   void arrayRead() {
 
-  //   chequear antes de moverme si se puede ir o no a ese punto, segun límites de ancho de hoja
-  //   si está fuera de los límites paso al siguiente punto (sin actualizar el punto anterior)
-  //   tengo que saber mi posición actual Y hacer el calculo Y ver si está dentro de mi hoja
-  //   si no está dentro de mi hoja n++
+     chequear antes de moverme si se puede ir o no a ese punto, segun límites de ancho de hoja
+     si está fuera de los límites paso al siguiente punto (sin actualizar el punto anterior)
+     tengo que saber mi posición actual Y hacer el calculo Y ver si está dentro de mi hoja
+     si no está dentro de mi hoja n++
 
+  outLimitX = true;
+  outLimitY = true;
   posX = pgm_read_word_near(pixelX + n);//leo nueva cordenada en X en pixeles
-  while ( posX < minX || posX > maxX) {//si posX se sale de lo límites
-    n++;                               //avanzo una posición
-    posX = pgm_read_word_near(pixelX + n);
-    //    digitalWrite(pinLed1, HIGH);
-    //    delay(200);
-    //    digitalWrite(pinLed1, LOW);
-  }
-
   posY = pgm_read_word_near(pixelY + n);//leo nueva cordenada en Y en pixeles
-  while ( posY < minY || posY > maxY) {//si posY se sale de lo límites
-    n++;                               //avanzo una posición
+  while (outLimitX || outLimitY) { //mientras estén fuera de límites buscar nueva posición
+    posX = pgm_read_word_near(pixelX + n);
+    if (posX < minX || posX > maxX) {//si posX se sale de lo límites
+      n++;                               //avanzo una posición
+      posX = pgm_read_word_near(pixelX + n);
+      outLimitX = true;
+    } else {
+      outLimitX = false;
+    }
     posY = pgm_read_word_near(pixelY + n);
-    //    digitalWrite(pinLed2, HIGH);
-    //    delay(500);
-    //    digitalWrite(pinLed2, LOW);
+    if ( posY < minY || posY > maxY) {//si posY se sale de lo límites
+      n++;                               //avanzo una posición
+      posY = pgm_read_word_near(pixelY + n);
+      outLimitY = true;
+    } else {
+      outLimitY = false;
+    }
   }
-  posY = pgm_read_word_near(pixelY + n);//leo nueva posición en Y
-  posX = pgm_read_word_near(pixelX + n);//leo nueva posición en X
 
   posX = (posX - pgm_read_word_near(pixelX + m)) * f; //posX = cantidad de pasos de motor en "x" que debe efectuar para ir a destino
   posY = (posY - pgm_read_word_near(pixelY + m)) * f; //posY = cantidad de pasos de motor en "y" que debe efectuar para ir a destino
